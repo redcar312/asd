@@ -38,12 +38,13 @@ typedef struct s_philo
 {
 	int	id;
 	pthread_t	thread;
-	pthread_mutex_t	l_fork;
-	pthread_mutex_t	r_fork;
+	unsigned int	l_fork;
+	unsigned int	r_fork;
 	struct s_host	*host;
 	long long	last_eat;
 	long	eat_counter;
 
 }	s_philo;
+
 
 #endif
