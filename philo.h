@@ -24,13 +24,21 @@ typedef struct	s_host
 {
 	struct s_philo	*philos;
 	pthread_mutex_t	*forks;
+	long	fc;
+	long	tl;
+	long	sc;
+	long	tc;
+	long long	start_time;
 	long long	time_to_die;
 	long long	time_to_sleep;
-	long long	time_to_think;
+	long long	time_to_eat;
 	long	n_of_eats;
 	long	n;
 	pthread_t	monitor;
-	pthread_mutex_t	monitor_lock;
+	pthread_mutex_t	status_lock;
+	pthread_mutex_t	t_lock;
+	bool	is_over;
+	
 
 }	s_host;
 
@@ -43,7 +51,7 @@ typedef struct s_philo
 	struct s_host	*host;
 	long long	last_eat;
 	long	eat_counter;
-
+	pthread_mutex_t	lock;
 }	s_philo;
 
 

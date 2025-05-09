@@ -12,32 +12,6 @@
 
 #include "philo.h"
 
-typedef struct	s_host
-{
-	struct s_philo	*philos;
-	pthread_mutex_t	*forks;
-	long long	time_to_die;
-	long long	time_to_sleep;
-	long long	time_to_think;
-	long	n_of_eats;
-	long	n;
-	pthread_t	monitor;
-	pthread_mutex_t	monitor_lock;
-
-}	s_host;
-
-typedef struct s_philo
-{
-	int	id;
-	pthread_t	thread;
-	unsigned int	l_fork;
-	unsigned int	r_fork;
-	struct s_host	*host;
-	long long	last_eat;
-	long	eat_counter;
-
-}	s_philo;
-
 int	f_isdigit(unsigned int c)
 {
 	if (c <= 57 && c >= 48)
@@ -101,24 +75,103 @@ int	ft_atoi(const char *str)
 	return (ft_atol(str));
 }
 
+void	handle_mutex_removal(struct s_host *h)
+{
+	long	i;
+	
+	i = 0;
+	if (!h)
+		return ;
+	if (h->sc != 0)
+		pthread_mutex_destroy(&h->status_lock);
+	if (h->tc != 0)
+		pthread_mutex_destroy(&h->t_lock);
+	if (h->fc != 0)
+	{
+		while (i < h->fc)
+		{
+			pthread_mutex_destroy(&h->forks[i]);
+			i++;
+		}
+	}
+}
 
+void	handle_free(struct s_host *h)
+{
+	long	i;
+	
+	i = 0;
+	if (!h)
+		return;
+	while (i < h->tl)
+	{
+		pthread_mutex_destroy(&h->philos[i].lock);
+		i++;
+	}
+	free(h->philos);
+}
 
-long long	get_time(void)
+void	print_error(char *msg)
+{
+	size_t	i;
+
+	i = 0;
+	if(!msg)
+		return ;
+	while(msg[i])
+	{
+		write(2, &msg[i], 1);
+		i++;
+	}
+	write(2, "\n", 1);
+}
+
+void	handle_err(struct s_host *h, char *msg)
+{
+	if (!h)
+		exit(1);
+	handle_mutex_removal(h);
+	handle_free(h);
+	print_error(msg);
+	exit(1);
+}
+
+void	handle_lock(pthread_mutex_t *ptr, struct s_host *h)
+{
+	if (pthread_mutex_lock(ptr) != 0)
+		handle_err(h, "Mutex lock error");
+}
+
+void	handle_unlock(pthread_mutex_t *ptr, struct s_host *h)
+{
+	if (pthread_mutex_unlock(ptr) != 0)
+		handle_err(h, "Mutex lock error");
+}
+
+long long	get_time(struct s_host *h)
 {
 	struct timeval	t;
 	long long	res;
 
-	gettimeofday(&t, NULL);
+	if (gettimeofday(&t, NULL) == -1)
+		handle_err(h, "gettime error");
 	res = (long long)(t.tv_sec * 1000) + (long long)(t.tv_usec / 1000);
 	return (res);
+}
 
+void	waiter(long long timer, struct s_philo *p)
+{
+	long long	time;
+
+	time = get_time(p->host);
+	while (get_time(p->host) > (time + timer));
 }
 
 void	write_status(struct s_philo *p, char *str)
 {
 	long long time;
 
-	time = get_time();
+	time = get_time(p->host);
 	printf("%lld %d %s\n", time, p->id, str);
 }
 
@@ -127,24 +180,98 @@ void	init_forks(struct s_host *host, long n)
 	int	i;
 
 	i = -1;
-
+	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
+		handle_err(host, "fork init error");
+	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
+		handle_err(host, "fork init error");
 	while (++i < n)
 	{
 		if (pthread_mutex_init(&host->forks[i], NULL) != 0)
-			printf("b\n");
+			handle_err(host, "fork init error");
+		host->tc++;
 	}
 }
 
 void	eat(s_philo *p)
 {
-	pthread_mutex_lock(&p->host->forks[p->l_fork]),
-	pthread_mutex_lock(&p->host->forks[p->r_fork]);
+	handle_lock(&p->host->forks[p->l_fork], p->host);
+	handle_lock(&p->host->forks[p->r_fork], p->host);
 	write_status(p, "has taken a fork");
 	write_status(p, "is eating");
-	usleep(1000);
+	handle_lock(&p->lock, p->host);
+	p->last_eat = get_time(p->host);
+	handle_unlock(&p->lock, p->host);
 	p->eat_counter++;
-	pthread_mutex_unlock(&p->host->forks[p->l_fork]);
-	pthread_mutex_unlock(&p->host->forks[p->r_fork]);
+	waiter(p->host->time_to_eat, p);
+	handle_unlock(&p->host->forks[p->l_fork], p->host);
+	handle_unlock(&p->host->forks[p->r_fork], p->host);
+}
+
+void	p_sleep(struct s_philo *p)
+{
+	write_status(p, "is sleeping");
+	waiter(p->host->time_to_sleep, p);
+}
+
+bool	check_state(struct s_host *h)
+{
+	bool	state;
+
+	pthread_mutex_lock(&h->status_lock);
+	state = h->is_over;
+	pthread_mutex_unlock(&h->status_lock);
+	return (state);
+}
+
+void	set_status(struct s_host *h, bool status)
+{
+	pthread_mutex_lock(&h->status_lock);
+	h->is_over = status;
+	pthread_mutex_unlock(&h->status_lock);
+}
+
+bool	has_died(struct s_philo *p)
+{
+	long long	time;
+	bool	res;
+
+	time = get_time(p->host);
+	res = false;
+	handle_lock(&p->lock, p->host);
+	if ((time - p->last_eat) >= p->host->time_to_die)
+		res = true;
+	handle_unlock(&p->lock, p->host);
+	return (res);
+}
+
+bool	is_done(struct s_host *h)
+{
+	long	i;
+	bool	ate_all;
+	long	en;
+	
+	i = -1;
+	ate_all = true;
+	en = h->n_of_eats;
+	while (++i < h->n)
+	{
+		if (has_died(&h->philos[i]))
+		{
+			set_status(h, true);
+			return (true);
+		}
+		if (h->n_of_eats != -1)
+		{
+			if(h->philos[i].eat_counter < en)
+				return (false);
+		}
+	}
+	if (en != -1 && ate_all)
+	{
+		set_status(h, true);
+		return (true);
+	}
+	return (false);
 }
 
 void	*philo_loop(void *arg)
@@ -152,20 +279,31 @@ void	*philo_loop(void *arg)
 	s_philo *p;
 
 	p = (s_philo *)arg;
-	while(get_time() < p->host->time_to_think);
-	if(p->id % 2 == 0)
-	{
-		write_status(p, "is thinking");
-		usleep(1000);
-	}
-	while(p->eat_counter < 5)
+	handle_lock(&p->lock, p->host);
+	p->last_eat = p->host->start_time;
+	if (p->id % 2 == 0)
+		waiter(1, p);
+	while (!is_done(p->host))
 	{
 		eat(p);
-		write_status(p, "is sleeping");
 		usleep(1000);
 		write_status(p, "is thinking");
 		usleep(1000);
 	}
+	return (NULL);
+}
+
+void	*monitor(void *arg)
+{
+	s_host	*host;
+	
+	host = (s_host *)arg;
+	while(1)
+	{
+		if(is_done(host))
+			return (NULL);
+	}
+	
 	return (NULL);
 }
 
@@ -174,13 +312,17 @@ void	start_sim(struct s_host *host)
 	long	i;
 
 	i = -1;
-	host->time_to_think = get_time() + ((long long)host->n * 2 * 10);
+	//host->time_to_think = get_time() + ((long long)host->n * 2 * 10);
+	host->start_time = get_time(host);
 	while (++i < host->n)
 	{
-		pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]);
+		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) == -1)
+			handle_err(host, "thread creation error");
 	}
+	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) == -1)
+		handle_err(host, "thread creation error");
+	
 }
-
 
 void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
 {
@@ -192,7 +334,9 @@ void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
 		host->philos[i].host = host;
 		host->philos[i].id = i + 1;
 		host->philos[i].eat_counter = 0;
-
+		if (pthread_mutex_init(&host->philos[i].lock, NULL) != 0)
+			handle_err(host, "mutex init error");
+		host->tl++;
 		if (host->philos[i].id == (int)host->n)
 		{
 			    host->philos[i].l_fork = i;
@@ -200,7 +344,7 @@ void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
 		}
 		else
 		{
-		    if (i % 2 == 0)
+			if (i % 2 == 0)
 			{
 			    host->philos[i].l_fork = i + 1;
 			    host->philos[i].r_fork = i;
@@ -212,29 +356,40 @@ void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
 			}
 		}
 	}
-
 }
 
 int	init_host_data(struct s_host *host, char **argv)
 {
 	long	l = ft_atol(argv[1]);
-
+	host->fc = 0;
+	host->tl = 0;
+	host->sc = 0;
+	host->tc = 0;
 	host->philos = malloc(l * sizeof(s_philo));
 	if (!host->philos)
 		return (-1);
 	host->forks = malloc(l * sizeof(pthread_mutex_t));
 	if (!host->forks)
-		exit(1);
+		handle_err(host, "malloc fail");	
 	init_forks(host, l);
 	init_philo_data(host, host->forks, l);
+	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
+			handle_err(host, "mutex init error");
+	host->sc = 1;
+	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
+			handle_err(host, "mutex init error");
+	host->tc = 1;
 	return (1);
 }
-
 
 int	main(int argc, char **argv)
 {
 	struct s_host host;
 	host.n = ft_atol(argv[1]);
+	host.time_to_eat = 100;
+	host.time_to_sleep = 200;
+	host.time_to_die = 500;
+	host.n_of_eats = -1;
 	/*struct s_philo p;
 	struct s_fork f1;
 	struct s_fork f2;
@@ -262,5 +417,4 @@ int	main(int argc, char **argv)
 	*/
 	init_host_data(&host, argv);
 	start_sim(&host);
-	while(1);
 }
