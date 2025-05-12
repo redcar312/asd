@@ -164,7 +164,17 @@ void	waiter(long long timer, struct s_philo *p)
 	long long	time;
 
 	time = get_time(p->host);
-	while (get_time(p->host) > (time + timer));
+	while (get_time(p->host) > (time + timer) && !check_state(p->host))
+	{
+		usleep(50);
+	}
+	return ;
+}
+
+void	sync_start(long long timer)
+{
+	while (get_time() < timer)
+		usleep(1);
 }
 
 void	write_status(struct s_philo *p, char *str)
@@ -200,11 +210,25 @@ void	eat(s_philo *p)
 	write_status(p, "is eating");
 	handle_lock(&p->lock, p->host);
 	p->last_eat = get_time(p->host);
-	handle_unlock(&p->lock, p->host);
 	p->eat_counter++;
+	handle_unlock(&p->lock, p->host);
 	waiter(p->host->time_to_eat, p);
 	handle_unlock(&p->host->forks[p->l_fork], p->host);
 	handle_unlock(&p->host->forks[p->r_fork], p->host);
+}
+
+void	think(struct s_philo *p)
+{
+	long long ttt;
+
+	ttt = p->host->time_to_die;
+	ttt = (ttt - (get_time() - p->last_eat) - p->host->time_to_eat) / 2;
+
+	if (ttt < 0)
+		ttt = 0;
+	if (ttt > 600)
+		ttt = 200;
+	waiter(ttt, p);
 }
 
 void	p_sleep(struct s_philo *p)
@@ -286,7 +310,6 @@ void	*philo_loop(void *arg)
 	while (!is_done(p->host))
 	{
 		eat(p);
-		usleep(1000);
 		write_status(p, "is thinking");
 		usleep(1000);
 	}
@@ -310,10 +333,10 @@ void	*monitor(void *arg)
 void	start_sim(struct s_host *host)
 {
 	long	i;
-
+	long long	delay;
 	i = -1;
-	//host->time_to_think = get_time() + ((long long)host->n * 2 * 10);
-	host->start_time = get_time(host);
+	delay = (long long)host->n * 2 * 10;
+	host->start_time = get_time(host) + delay;
 	while (++i < host->n)
 	{
 		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) == -1)
@@ -370,7 +393,7 @@ int	init_host_data(struct s_host *host, char **argv)
 		return (-1);
 	host->forks = malloc(l * sizeof(pthread_mutex_t));
 	if (!host->forks)
-		handle_err(host, "malloc fail");	
+		handle_err(host, "malloc fail");
 	init_forks(host, l);
 	init_philo_data(host, host->forks, l);
 	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
@@ -384,6 +407,7 @@ int	init_host_data(struct s_host *host, char **argv)
 
 int	main(int argc, char **argv)
 {
+//join threads on destroy;
 	struct s_host host;
 	host.n = ft_atol(argv[1]);
 	host.time_to_eat = 100;
@@ -414,7 +438,7 @@ int	main(int argc, char **argv)
 	usleep(1000);
 	pthread_create(&p2.thread, NULL, *philo_loop, (void *)&p2);
 	while(1);
-	*/
+	*/3
 	init_host_data(&host, argv);
 	start_sim(&host);
 }
