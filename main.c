@@ -116,20 +116,27 @@ void	print_error(char *msg)
 	size_t	i;
 
 	i = 0;
-	if(!msg)
+	if (!msg)
 		return ;
-	while(msg[i])
+	while (msg[i])
 	{
 		write(2, &msg[i], 1);
 		i++;
 	}
 	write(2, "\n", 1);
 }
+void	handle_thread_removal(struct s_host *host)
+{
+	long	i;
+	
+
+}
 
 void	handle_err(struct s_host *h, char *msg)
 {
 	if (!h)
 		exit(1);
+	handle_thread_removal(h);
 	handle_mutex_removal(h);
 	handle_free(h);
 	print_error(msg);
@@ -159,30 +166,42 @@ long long	get_time(struct s_host *h)
 	return (res);
 }
 
+bool	check_state(struct s_host *h)
+{
+	bool	state;
+
+	pthread_mutex_lock(&h->status_lock);
+	state = h->is_over;
+	pthread_mutex_unlock(&h->status_lock);
+	return (state);
+}
+
 void	waiter(long long timer, struct s_philo *p)
 {
 	long long	time;
 
 	time = get_time(p->host);
-	while (get_time(p->host) > (time + timer) && !check_state(p->host))
+	while (get_time(p->host) < (time + timer) && !check_state(p->host))
 	{
 		usleep(50);
 	}
 	return ;
 }
 
-void	sync_start(long long timer)
+void	sync_start(long long timer, struct s_host *host)
 {
-	while (get_time() < timer)
+	while (get_time(host) < timer)
 		usleep(1);
 }
 
 void	write_status(struct s_philo *p, char *str)
 {
 	long long time;
-
+    
+    handle_lock(&p->host->t_lock, p->host);
 	time = get_time(p->host);
 	printf("%lld %d %s\n", time, p->id, str);
+	handle_unlock(&p->host->t_lock, p->host);
 }
 
 void	init_forks(struct s_host *host, long n)
@@ -210,9 +229,9 @@ void	eat(s_philo *p)
 	write_status(p, "is eating");
 	handle_lock(&p->lock, p->host);
 	p->last_eat = get_time(p->host);
-	p->eat_counter++;
-	handle_unlock(&p->lock, p->host);
+    handle_unlock(&p->lock, p->host);
 	waiter(p->host->time_to_eat, p);
+	p->eat_counter++;
 	handle_unlock(&p->host->forks[p->l_fork], p->host);
 	handle_unlock(&p->host->forks[p->r_fork], p->host);
 }
@@ -222,12 +241,13 @@ void	think(struct s_philo *p)
 	long long ttt;
 
 	ttt = p->host->time_to_die;
-	ttt = (ttt - (get_time() - p->last_eat) - p->host->time_to_eat) / 2;
+	ttt = (ttt - (get_time(p->host) - p->last_eat) - p->host->time_to_eat) / 2;
 
 	if (ttt < 0)
 		ttt = 0;
 	if (ttt > 600)
 		ttt = 200;
+	write_status(p, "is thinking");
 	waiter(ttt, p);
 }
 
@@ -237,15 +257,6 @@ void	p_sleep(struct s_philo *p)
 	waiter(p->host->time_to_sleep, p);
 }
 
-bool	check_state(struct s_host *h)
-{
-	bool	state;
-
-	pthread_mutex_lock(&h->status_lock);
-	state = h->is_over;
-	pthread_mutex_unlock(&h->status_lock);
-	return (state);
-}
 
 void	set_status(struct s_host *h, bool status)
 {
@@ -259,9 +270,9 @@ bool	has_died(struct s_philo *p)
 	long long	time;
 	bool	res;
 
+    handle_lock(&p->lock, p->host);
 	time = get_time(p->host);
 	res = false;
-	handle_lock(&p->lock, p->host);
 	if ((time - p->last_eat) >= p->host->time_to_die)
 		res = true;
 	handle_unlock(&p->lock, p->host);
@@ -305,13 +316,15 @@ void	*philo_loop(void *arg)
 	p = (s_philo *)arg;
 	handle_lock(&p->lock, p->host);
 	p->last_eat = p->host->start_time;
+	handle_unlock(&p->lock, p->host);
+	sync_start(p->host->start_time, p->host);
 	if (p->id % 2 == 0)
-		waiter(1, p);
-	while (!is_done(p->host))
+		waiter(10, p);
+	while (1)
 	{
 		eat(p);
-		write_status(p, "is thinking");
-		usleep(1000);
+		p_sleep(p);
+		think(p);
 	}
 	return (NULL);
 }
@@ -319,14 +332,14 @@ void	*philo_loop(void *arg)
 void	*monitor(void *arg)
 {
 	s_host	*host;
-	
+
 	host = (s_host *)arg;
+	sync_start(host->start_time, host);
 	while(1)
 	{
 		if(is_done(host))
 			return (NULL);
 	}
-	
 	return (NULL);
 }
 
@@ -410,9 +423,9 @@ int	main(int argc, char **argv)
 //join threads on destroy;
 	struct s_host host;
 	host.n = ft_atol(argv[1]);
-	host.time_to_eat = 100;
-	host.time_to_sleep = 200;
-	host.time_to_die = 500;
+	host.time_to_eat = 1000;
+	host.time_to_sleep = 1000;
+	host.time_to_die = 5000;
 	host.n_of_eats = -1;
 	/*struct s_philo p;
 	struct s_fork f1;
@@ -438,7 +451,8 @@ int	main(int argc, char **argv)
 	usleep(1000);
 	pthread_create(&p2.thread, NULL, *philo_loop, (void *)&p2);
 	while(1);
-	*/3
+	*/
 	init_host_data(&host, argv);
 	start_sim(&host);
+    while(1);
 }
