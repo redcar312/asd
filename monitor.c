@@ -1,0 +1,91 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   monitor.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: mhurtamo <mhurtamo@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/13 16:13:42 by mhurtamo          #+#    #+#             */
+/*   Updated: 2025/05/13 16:13:59 by mhurtamo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "philo.h"
+
+bool	check_state(struct s_host *h)
+{
+	bool	state;
+
+	pthread_mutex_lock(&h->status_lock);
+	state = h->is_over;
+	pthread_mutex_unlock(&h->status_lock);
+	return (state);
+}
+
+void	set_status(struct s_host *h, bool status)
+{
+	pthread_mutex_lock(&h->status_lock);
+	h->is_over = status;
+	pthread_mutex_unlock(&h->status_lock);
+}
+
+bool	has_died(struct s_philo *p)
+{
+	long long	time;
+	bool	res;
+
+	handle_lock(&p->lock, p->host);
+	time = get_time(p->host);
+	res = false;
+	if ((time - p->last_eat) >= p->host->time_to_die)
+	{
+		res = true;
+		write_status(p, "has died");
+	}
+	handle_unlock(&p->lock, p->host);
+	return (res);
+}
+
+bool	is_done(struct s_host *h)
+{
+	long	i;
+	bool	ate_all;
+	long	en;
+	
+	i = -1;
+	ate_all = true;
+	en = h->n_of_eats;
+	while (++i < h->n)
+	{
+		if (has_died(&h->philos[i]))
+		{
+			set_status(h, true);
+			return (true);
+		}
+		if (h->n_of_eats != -1)
+		{
+			if (h->philos[i].eat_counter < en)
+				return (false);
+		}
+	}
+	if (en != -1 && ate_all)
+	{
+		set_status(h, true);
+		return (true);
+	}
+	return (false);
+}
+
+void	*monitor(void *arg)
+{
+	s_host	*host;
+
+	host = (s_host *)arg;
+	sync_start(host->start_time, host);
+	while(1)
+	{
+		if(is_done(host))
+			return (NULL);
+	}
+	return (NULL);
+}
