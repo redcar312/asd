@@ -12,9 +12,9 @@
 
 #include "philo.h"
 
-void	init_forks(struct s_host *host, long n)
+void	init_forks(struct t_host *host, long n)
 {
-	int	i;
+	long	i;
 
 	i = -1;
 	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
@@ -29,7 +29,29 @@ void	init_forks(struct s_host *host, long n)
 	}
 }
 
-void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
+static void	give_forks(struct t_philo *s, long i)
+{
+	if (philo->id == philo->host->n)
+	{
+		philo->l_fork = i;
+		philo->.r_fork = 0;
+	}
+	else
+	{
+		if (i % 2 == 0)
+		{
+			philo->l_fork = i + 1;
+			philo->r_fork = i;
+		}
+		else
+		{
+			philo->l_fork = i;
+			philo[i]->r_fork = i + 1;
+		}
+	}
+}
+
+void	init_p_data(struct t_host *host, pthread_mutex_t *forks, long n)
 {
 	long	i;
 
@@ -42,28 +64,11 @@ void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n)
 		if (pthread_mutex_init(&host->philos[i].lock, NULL) != 0)
 			handle_err(host, "mutex init error");
 		host->tl++;
-		if (host->philos[i].id == (int)host->n)
-		{
-			    host->philos[i].l_fork = i;
-			    host->philos[i].r_fork = 0;
-		}
-		else
-		{
-			if (i % 2 == 0)
-			{
-			    host->philos[i].l_fork = i + 1;
-			    host->philos[i].r_fork = i;
-			}
-			else
-			{
-			    host->philos[i].l_fork = i;
-			    host->philos[i].r_fork = i + 1;
-			}
-		}
+		give_forks(&philos[i], i);
 	}
 }
 
-void	init_host_counters(struct s_host *host)
+static void	init_host_counters(struct t_host *host, char **argv)
 {
 	host->fc = 0;
 	host->tl = 0;
@@ -71,29 +76,35 @@ void	init_host_counters(struct s_host *host)
 	host->tc = 0;
 	host->t_count.monitor = false;
 	host->t_count.p_count = 0;
-
+	host->time_to_die = ft_atoll(argv[2]);
+	host->time_to_eat = ft_atoll(argv[3]);
+	host->time_to_sleep = ft_atoll(argv[4]);
+	host->n_of_eats = -1;
+	if (argv[5])
+	{
+		host->n_of_eats = ft_atol(argv[5]);
+	}
 }
 
-
-int	init_host_data(struct s_host *host, char **argv)
+int	init_host_data(struct t_host *host, char **argv)
 {
-	long	l = ft_atol(argv[1]);
-	init_host_counters(host);
-	host->philos = malloc(l * sizeof(s_philo));
+	long	l;
+
+	l = ft_atol(argv[1]);
+	init_host_counters(host, argv);
+	host->philos = malloc(l * sizeof(t_philo));
 	if (!host->philos)
 		return (-1);
 	host->forks = malloc(l * sizeof(pthread_mutex_t));
 	if (!host->forks)
 		handle_err(host, "malloc fail");
 	init_forks(host, l);
-	init_philo_data(host, host->forks, l);
+	init_p_data(host, host->forks, l);
 	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
-			handle_err(host, "mutex init error");
+		handle_err(host, "mutex init error");
 	host->sc = 1;
 	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
-			handle_err(host, "mutex init error");
+		handle_err(host, "mutex init error");
 	host->tc = 1;
 	return (1);
 }
-
-

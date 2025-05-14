@@ -20,10 +20,10 @@
 # include <limits.h>
 # include <stdbool.h>
 
-typedef struct s_host
+typedef struct t_host
 {
-	struct s_philo		*philos;
-	struct s_tc			t_count;
+	struct t_philo		*philos;
+	struct t_tc			t_count;
 	pthread_mutex_t		*forks;
 	long				fc;
 	long				tl;
@@ -35,52 +35,56 @@ typedef struct s_host
 	long long			time_to_eat;
 	long				n_of_eats;
 	long				n;
-	pthread_t		monitor;
+	pthread_t			monitor;
 	pthread_mutex_t		status_lock;
-	pthread_mutex_t	t_lock;
-	bool	is_over;
-	
+	pthread_mutex_t		t_lock;
+	bool				is_over;
+}	t_host;
 
-}	s_host;
-
-typedef struct	s_tc
+typedef struct t_tc
 {
 	long	p_count;
 	bool	monitor;
-}	s_tc;
+}	t_tc;
 
-typedef struct s_philo
+typedef struct t_philo
 {
-	int	id;
-	pthread_t	thread;
-	unsigned int	l_fork;
-	unsigned int	r_fork;
-	struct s_host	*host;
-	long long	last_eat;
-	long	eat_counter;
-	pthread_mutex_t	lock;
-}	s_philo;
+	long				id;
+	pthread_t			thread;
+	long				l_fork;
+	long				r_fork;
+	struct t_host		*host;
+	long long			last_eat;
+	long				eat_counter;
+	pthread_mutex_t		lock;
+}	t_philo;
 
 long long	ft_atoll(const char *num);
-int	ft_atol(const char *str);
-int	ft_atoi(const char *str);
-int	f_isdigit(unsigned int c);
-bool	validator(char **argv);
-void	init_philo_data(struct s_host *host, pthread_mutex_t *forks, long n);
-void	init_host_counters(struct s_host *host);
-int	init_host_data(struct s_host *host, char **argv);
-void	init_forks(struct s_host *host, long n);
-void	*philo_loop(void *arg);
-void	*monitor(void *arg);
-bool	check_state(struct s_host *h);
-void	set_status(struct s_host *h, bool status);
-bool	has_died(struct s_philo *p);
-bool	is_done(struct s_host *h);
-void	write_status(struct s_philo *p, char *str);
-void	sync_start(long long timer, struct s_host *host);
-void	waiter(long long timer, struct s_philo *p);
-long long	get_time(struct s_host *h);
-void	handle_err(struct s_host *h, char *msg);
-void	handle_lock(pthread_mutex_t *ptr, struct s_host *h);
-void	handle_unlock(pthread_mutex_t *ptr, struct s_host *h);
+int			ft_atol(const char *str);
+int			ft_atoi(const char *str);
+int			f_isdigit(unsigned int c);
+bool		validator(char **argv);
+void		init_p_data(struct t_host *host, pthread_mutex_t *forks, long n);
+void		init_host_counters(struct t_host *host);
+int			init_host_data(struct t_host *host, char **argv);
+void		init_forks(struct t_host *host, long n);
+void		*philo_loop(void *arg);
+void		*monitor(void *arg);
+bool		check_state(struct t_host *h);
+void		set_status(struct t_host *h, bool status);
+bool		has_died(struct t_philo *p);
+bool		is_done(struct t_host *h);
+void		write_status(struct t_philo *p, char *str);
+void		sync_start(long long timer, struct t_host *host);
+void		waiter(long long timer, struct t_philo *p);
+long long	get_time(struct t_host *h);
+void		handle_err(struct t_host *h, char *msg);
+void		handle_lock(pthread_mutex_t *ptr, struct t_host *h);
+void		handle_unlock(pthread_mutex_t *ptr, struct t_host *h);
+void		print_error(char *msg);
+void		*single_philo(void *arg);
+void		handle_mutex_removal(struct t_host *h);
+void		handle_free(struct t_host *h);
+void		handle_thread_removal(struct t_host *host);
+void		end_sim(struct t_host *h);
 #endif

@@ -24,19 +24,22 @@ bool	validator(char **argv)
 {
 	size_t	i;
 	size_t	j;
-	
+
 	if (!argv)
 		return (false);
 	i = 0;
 	while (argv[i])
 	{
-		j = 0
+		j = 0;
 		while (argv[i][j])
 		{
 			if (!f_isdigit(argv[i][j]))
 				return (false);
 			j++;
 		}
+		if (ft_atoll(argv[i]) == 0)
+			return (false);
 		i++;
 	}
+	return (true);
 }

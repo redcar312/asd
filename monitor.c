@@ -12,7 +12,7 @@
 
 #include "philo.h"
 
-bool	check_state(struct s_host *h)
+bool	check_state(struct t_host *h)
 {
 	bool	state;
 
@@ -22,17 +22,17 @@ bool	check_state(struct s_host *h)
 	return (state);
 }
 
-void	set_status(struct s_host *h, bool status)
+void	set_status(struct t_host *h, bool status)
 {
 	pthread_mutex_lock(&h->status_lock);
 	h->is_over = status;
 	pthread_mutex_unlock(&h->status_lock);
 }
 
-bool	has_died(struct s_philo *p)
+bool	has_died(struct t_philo *p)
 {
 	long long	time;
-	bool	res;
+	bool		res;
 
 	handle_lock(&p->lock, p->host);
 	time = get_time(p->host);
@@ -46,15 +46,13 @@ bool	has_died(struct s_philo *p)
 	return (res);
 }
 
-bool	is_done(struct s_host *h)
+bool	is_done(struct t_host *h)
 {
 	long	i;
 	bool	ate_all;
-	long	en;
-	
+
 	i = -1;
 	ate_all = true;
-	en = h->n_of_eats;
 	while (++i < h->n)
 	{
 		if (has_died(&h->philos[i]))
@@ -64,7 +62,7 @@ bool	is_done(struct s_host *h)
 		}
 		if (h->n_of_eats != -1)
 		{
-			if (h->philos[i].eat_counter < en)
+			if (h->philos[i].eat_counter < h->n_of_eats)
 				return (false);
 		}
 	}
@@ -82,9 +80,9 @@ void	*monitor(void *arg)
 
 	host = (s_host *)arg;
 	sync_start(host->start_time, host);
-	while(1)
+	while (1)
 	{
-		if(is_done(host))
+		if (is_done(host))
 			return (NULL);
 	}
 	return (NULL);

@@ -12,10 +12,10 @@
 
 #include "philo.h"
 
-static void	handle_mutex_removal(struct s_host *h)
+void	handle_mutex_removal(struct t_host *h)
 {
 	long	i;
-	
+
 	i = 0;
 	if (!h)
 		return ;
@@ -33,13 +33,13 @@ static void	handle_mutex_removal(struct s_host *h)
 	}
 }
 
-static void	handle_free(struct s_host *h)
+void	handle_free(struct t_host *h)
 {
 	long	i;
-	
+
 	i = 0;
 	if (!h)
-		return;
+		return ;
 	while (i < h->tl)
 	{
 		pthread_mutex_destroy(&h->philos[i].lock);
@@ -48,7 +48,7 @@ static void	handle_free(struct s_host *h)
 	free(h->philos);
 }
 
-static void	print_error(char *msg)
+void	print_error(char *msg)
 {
 	size_t	i;
 
@@ -63,10 +63,10 @@ static void	print_error(char *msg)
 	write(2, "\n", 1);
 }
 
-static void	handle_thread_removal(struct s_host *host)
+void	handle_thread_removal(struct t_host *host)
 {
 	long	i;
-	
+
 	i = 0;
 	while (i < host->t_count.p_count)
 	{
@@ -84,7 +84,7 @@ static void	handle_thread_removal(struct s_host *host)
 		pthread_join(host->monitor, NULL);
 }
 
-void	handle_err(struct s_host *h, char *msg)
+void	handle_err(struct t_host *h, char *msg)
 {
 	if (!h)
 		exit(1);

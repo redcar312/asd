@@ -12,10 +12,10 @@
 
 #include "philo.h"
 
-long long	get_time(struct s_host *h)
+long long	get_time(struct t_host *h)
 {
 	struct timeval	t;
-	long long	res;
+	long long		res;
 
 	if (gettimeofday(&t, NULL) == -1)
 		handle_err(h, "gettime error");
@@ -23,7 +23,7 @@ long long	get_time(struct s_host *h)
 	return (res);
 }
 
-void	waiter(long long timer, struct s_philo *p)
+void	waiter(long long timer, struct t_philo *p)
 {
 	long long	time;
 
@@ -35,19 +35,26 @@ void	waiter(long long timer, struct s_philo *p)
 	return ;
 }
 
-void	sync_start(long long timer, struct s_host *host)
+void	sync_start(long long timer, struct t_host *host)
 {
 	while (get_time(host) < timer)
 		usleep(1);
 }
 
-void	write_status(struct s_philo *p, char *str)
+void	write_status(struct t_philo *p, char *str)
 {
-	long long time;
-    
+	long long	time;
+
 	handle_lock(&p->host->t_lock, p->host);
 	time = get_time(p->host);
 	printf("%lld %d %s\n", time, p->id, str);
 	handle_unlock(&p->host->t_lock, p->host);
 }
 
+void	end_sim(struct t_host *h)
+{
+	handle_mutex_removal(h);
+	handle_thread_removal(h);
+	handle_free(h);
+	exit(0);
+}
