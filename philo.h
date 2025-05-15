@@ -20,6 +20,12 @@
 # include <limits.h>
 # include <stdbool.h>
 
+typedef struct t_tc
+{
+	long	p_count;
+	bool	monitor;
+}	t_tc;
+
 typedef struct t_host
 {
 	struct t_philo		*philos;
@@ -41,12 +47,6 @@ typedef struct t_host
 	bool				is_over;
 }	t_host;
 
-typedef struct t_tc
-{
-	long	p_count;
-	bool	monitor;
-}	t_tc;
-
 typedef struct t_philo
 {
 	long				id;
@@ -64,8 +64,7 @@ int			ft_atol(const char *str);
 int			ft_atoi(const char *str);
 int			f_isdigit(unsigned int c);
 bool		validator(char **argv);
-void		init_p_data(struct t_host *host, pthread_mutex_t *forks, long n);
-void		init_host_counters(struct t_host *host);
+void		init_p_data(struct t_host *host, long n);
 int			init_host_data(struct t_host *host, char **argv);
 void		init_forks(struct t_host *host, long n);
 void		*philo_loop(void *arg);

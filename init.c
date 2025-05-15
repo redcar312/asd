@@ -29,12 +29,12 @@ void	init_forks(struct t_host *host, long n)
 	}
 }
 
-static void	give_forks(struct t_philo *s, long i)
+static void	give_forks(struct t_philo *philo, long i)
 {
 	if (philo->id == philo->host->n)
 	{
 		philo->l_fork = i;
-		philo->.r_fork = 0;
+		philo->r_fork = 0;
 	}
 	else
 	{
@@ -46,12 +46,12 @@ static void	give_forks(struct t_philo *s, long i)
 		else
 		{
 			philo->l_fork = i;
-			philo[i]->r_fork = i + 1;
+			philo->r_fork = i + 1;
 		}
 	}
 }
 
-void	init_p_data(struct t_host *host, pthread_mutex_t *forks, long n)
+void	init_p_data(struct t_host *host, long n)
 {
 	long	i;
 
@@ -64,7 +64,7 @@ void	init_p_data(struct t_host *host, pthread_mutex_t *forks, long n)
 		if (pthread_mutex_init(&host->philos[i].lock, NULL) != 0)
 			handle_err(host, "mutex init error");
 		host->tl++;
-		give_forks(&philos[i], i);
+		give_forks(&host->philos[i], i);
 	}
 }
 
@@ -99,7 +99,7 @@ int	init_host_data(struct t_host *host, char **argv)
 	if (!host->forks)
 		handle_err(host, "malloc fail");
 	init_forks(host, l);
-	init_p_data(host, host->forks, l);
+	init_p_data(host, l);
 	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
 		handle_err(host, "mutex init error");
 	host->sc = 1;

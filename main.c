@@ -58,12 +58,12 @@ int	main(int argc, char **argv)
 
 	if (argc < 5 || argc > 6)
 	{
-		print_err("invalid number of args");
+		print_error("invalid number of args");
 		exit(1);
 	}
 	if (!validator(argv))
 	{
-		print_err("invalid arguments");
+		print_error("invalid arguments");
 		exit(1);
 	}
 	host.n = ft_atol(argv[1]);
@@ -72,6 +72,6 @@ int	main(int argc, char **argv)
 		handle_single(&host);
 	else
 		start_sim(&host);
-	while (1)
-		;
+	while(1);
+	exit(0);
 }

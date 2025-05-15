@@ -70,18 +70,18 @@ void	handle_thread_removal(struct t_host *host)
 	i = 0;
 	while (i < host->t_count.p_count)
 	{
-		pthread_join(host->philos[i].thread);
+		pthread_join(host->philos[i].thread, NULL);
 		i++;
 	}
 	if (host->t_count.monitor)
 		pthread_join(host->monitor, NULL);
 	while (i < host->t_count.p_count)
 	{
-		pthread_destroy(host->philos[i].thread);
+		pthread_exit((void *)&host->philos[i].thread);
 		i++;
 	}
 	if (host->t_count.monitor)
-		pthread_join(host->monitor, NULL);
+		pthread_exit((void *)&host->monitor);
 }
 
 void	handle_err(struct t_host *h, char *msg)

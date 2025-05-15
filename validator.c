@@ -27,7 +27,7 @@ bool	validator(char **argv)
 
 	if (!argv)
 		return (false);
-	i = 0;
+	i = 1;
 	while (argv[i])
 	{
 		j = 0;

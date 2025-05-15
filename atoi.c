@@ -64,7 +64,7 @@ long long	ft_atoll(const char *num)
 
 int	ft_atol(const char *str)
 {
-	return (ft_atol(str));
+	return (ft_atoll(str));
 }
 
 int	ft_atoi(const char *str)

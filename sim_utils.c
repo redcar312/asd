@@ -47,7 +47,7 @@ void	write_status(struct t_philo *p, char *str)
 
 	handle_lock(&p->host->t_lock, p->host);
 	time = get_time(p->host);
-	printf("%lld %d %s\n", time, p->id, str);
+	printf("%lld %ld %s\n", time, p->id, str);
 	handle_unlock(&p->host->t_lock, p->host);
 }
 

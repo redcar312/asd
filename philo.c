@@ -25,6 +25,8 @@ static void	eat(t_philo *p)
 	p->eat_counter++;
 	handle_unlock(&p->host->forks[p->l_fork], p->host);
 	handle_unlock(&p->host->forks[p->r_fork], p->host);
+	write_status(p, "is sleeping");
+	waiter(p->host->time_to_sleep, p);
 }
 
 static void	think(struct t_philo *p, bool is_silent)
@@ -40,12 +42,6 @@ static void	think(struct t_philo *p, bool is_silent)
 	if (!is_silent)
 		write_status(p, "is thinking");
 	waiter(ttt, p);
-}
-
-static void	p_sleep(struct t_philo *p)
-{
-	write_status(p, "is sleeping");
-	waiter(p->host->time_to_sleep, p);
 }
 
 void	*single_philo(void *arg)
@@ -75,10 +71,9 @@ void	*philo_loop(void *arg)
 	sync_start(p->host->start_time, p->host);
 	if (p->id % 2 == 0)
 		think(p, true);
-	while (1)
+	while (!check_state(p->host))
 	{
 		eat(p);
-		p_sleep(p);
 		think(p, false);
 	}
 	return (NULL);

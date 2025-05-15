@@ -41,6 +41,7 @@ bool	has_died(struct t_philo *p)
 	{
 		res = true;
 		write_status(p, "has died");
+		
 	}
 	handle_unlock(&p->lock, p->host);
 	return (res);
@@ -66,7 +67,7 @@ bool	is_done(struct t_host *h)
 				return (false);
 		}
 	}
-	if (en != -1 && ate_all)
+	if (h->n_of_eats != -1 && ate_all)
 	{
 		set_status(h, true);
 		return (true);
@@ -76,14 +77,14 @@ bool	is_done(struct t_host *h)
 
 void	*monitor(void *arg)
 {
-	s_host	*host;
+	t_host	*host;
 
-	host = (s_host *)arg;
+	host = (t_host *)arg;
 	sync_start(host->start_time, host);
 	while (1)
 	{
 		if (is_done(host))
-			return (NULL);
+			break;
 	}
 	return (NULL);
 }
