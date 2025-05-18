@@ -27,7 +27,7 @@ void	handle_unlock(pthread_mutex_t *ptr, struct t_host *h)
 static void	handle_single(struct t_host *host)
 {
 	if (pthread_create(&host->philos[0].thread, NULL,
-			*single_philo, (void *)&host->philos[0]) == -1)
+			*single_philo, (void *)&host->philos[0]))
 		handle_err(host, "thread creation error");
 	host->t_count.p_count++;
 }
@@ -42,14 +42,14 @@ void	start_sim(struct t_host *host)
 	host->start_time = get_time(host) + delay;
 	while (++i < host->n)
 	{
-		if (pthread_create(&host->philos[i].thread, NULL,
-				*philo_loop, (void *)&host->philos[i]) == -1)
-			handle_err(host, "thread creation error");
+		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) != 0)
+			write(1, "e", 1);
 		host->t_count.p_count++;
 	}
-	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) == -1)
+	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) != 0)
 		handle_err(host, "thread creation error");
 	host->monitor = true;
+
 }
 
 int	main(int argc, char **argv)
@@ -64,14 +64,17 @@ int	main(int argc, char **argv)
 	if (!validator(argv))
 	{
 		print_error("invalid arguments");
+		handle_single(&host);
 		exit(1);
 	}
 	host.n = ft_atol(argv[1]);
 	init_host_data(&host, argv);
-	if (host.n == 1)
-		handle_single(&host);
-	else
-		start_sim(&host);
-	while(1);
+	start_sim(&host);
+	while(1)
+	{
+		if(host.is_over)
+			break;
+	}
+	end_sim(&host);
 	exit(0);
 }

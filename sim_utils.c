@@ -54,7 +54,6 @@ void	write_status(struct t_philo *p, char *str)
 void	end_sim(struct t_host *h)
 {
 	handle_mutex_removal(h);
-	handle_thread_removal(h);
 	handle_free(h);
 	exit(0);
 }

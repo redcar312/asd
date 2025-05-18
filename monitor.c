@@ -16,17 +16,17 @@ bool	check_state(struct t_host *h)
 {
 	bool	state;
 
-	pthread_mutex_lock(&h->status_lock);
+	handle_lock(&h->status_lock, h);
 	state = h->is_over;
-	pthread_mutex_unlock(&h->status_lock);
+	handle_unlock(&h->status_lock, h);
 	return (state);
 }
 
 void	set_status(struct t_host *h, bool status)
 {
-	pthread_mutex_lock(&h->status_lock);
+	handle_lock(&h->status_lock, h);
 	h->is_over = status;
-	pthread_mutex_unlock(&h->status_lock);
+	handle_unlock(&h->status_lock, h);
 }
 
 bool	has_died(struct t_philo *p)
@@ -84,7 +84,7 @@ void	*monitor(void *arg)
 	while (1)
 	{
 		if (is_done(host))
-			break;
+			return(NULL);
 	}
 	return (NULL);
 }

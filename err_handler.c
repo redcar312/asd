@@ -75,13 +75,7 @@ void	handle_thread_removal(struct t_host *host)
 	}
 	if (host->t_count.monitor)
 		pthread_join(host->monitor, NULL);
-	while (i < host->t_count.p_count)
-	{
-		pthread_exit((void *)&host->philos[i].thread);
-		i++;
-	}
-	if (host->t_count.monitor)
-		pthread_exit((void *)&host->monitor);
+	pthread_exit(NULL);
 }
 
 void	handle_err(struct t_host *h, char *msg)

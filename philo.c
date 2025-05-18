@@ -63,7 +63,6 @@ void	*single_philo(void *arg)
 void	*philo_loop(void *arg)
 {
 	t_philo	*p;
-
 	p = (t_philo *)arg;
 	handle_lock(&p->lock, p->host);
 	p->last_eat = p->host->start_time;
@@ -71,7 +70,7 @@ void	*philo_loop(void *arg)
 	sync_start(p->host->start_time, p->host);
 	if (p->id % 2 == 0)
 		think(p, true);
-	while (!check_state(p->host))
+	while (1)
 	{
 		eat(p);
 		think(p, false);

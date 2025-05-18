@@ -19,6 +19,8 @@
 # include <sys/time.h>
 # include <limits.h>
 # include <stdbool.h>
+# include <errno.h>
+
 
 typedef struct t_tc
 {
