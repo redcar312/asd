@@ -46,7 +46,7 @@ typedef struct t_host
 	pthread_t			monitor;
 	pthread_mutex_t		status_lock;
 	pthread_mutex_t		t_lock;
-	bool				is_over;
+	_Atomic bool				is_over;
 }	t_host;
 
 typedef struct t_philo
@@ -55,9 +55,12 @@ typedef struct t_philo
 	pthread_t			thread;
 	long				l_fork;
 	long				r_fork;
+	_Atomic bool	lf;
+	_Atomic bool	rf;
+	_Atomic bool	wl;
 	struct t_host		*host;
-	long long			last_eat;
-	long				eat_counter;
+	_Atomic long long			last_eat;
+	_Atomic long				eat_counter;
 	pthread_mutex_t		lock;
 }	t_philo;
 

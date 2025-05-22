@@ -46,9 +46,13 @@ void	write_status(struct t_philo *p, char *str)
 	long long	time;
 
 	handle_lock(&p->host->t_lock, p->host);
+	p->wl = true;
 	time = get_time(p->host);
+	if (p->host->is_over)
+		return ;
 	printf("%lld %ld %s\n", time, p->id, str);
 	handle_unlock(&p->host->t_lock, p->host);
+	p->fl = false;
 }
 
 void	end_sim(struct t_host *h)

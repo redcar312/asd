@@ -61,6 +61,9 @@ void	init_p_data(struct t_host *host, long n)
 		host->philos[i].host = host;
 		host->philos[i].id = i + 1;
 		host->philos[i].eat_counter = 0;
+		host->philos[i].rf = false;
+		host->philos[i].lf = false;	
+		host->philos[i].wl = false;	
 		if (pthread_mutex_init(&host->philos[i].lock, NULL) != 0)
 			handle_err(host, "mutex init error");
 		host->tl++;

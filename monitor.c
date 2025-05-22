@@ -34,16 +34,13 @@ bool	has_died(struct t_philo *p)
 	long long	time;
 	bool		res;
 
-	handle_lock(&p->lock, p->host);
 	time = get_time(p->host);
 	res = false;
 	if ((time - p->last_eat) >= p->host->time_to_die)
 	{
 		res = true;
 		write_status(p, "has died");
-		
 	}
-	handle_unlock(&p->lock, p->host);
 	return (res);
 }
 
@@ -58,7 +55,7 @@ bool	is_done(struct t_host *h)
 	{
 		if (has_died(&h->philos[i]))
 		{
-			set_status(h, true);
+			h->is_over = true;
 			return (true);
 		}
 		if (h->n_of_eats != -1)
@@ -69,7 +66,7 @@ bool	is_done(struct t_host *h)
 	}
 	if (h->n_of_eats != -1 && ate_all)
 	{
-		set_status(h, true);
+		h->is_over = true;
 		return (true);
 	}
 	return (false);
