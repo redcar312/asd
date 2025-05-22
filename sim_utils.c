@@ -23,16 +23,35 @@ long long	get_time(struct t_host *h)
 	return (res);
 }
 
+void	test(t_philo *p, long long timer)
+{
+	long long	start;
+	
+	start = get_time(p->host);
+	while ((get_time(p->host) - start) < timer)
+		usleep(100);
+}
+
 void	waiter(long long timer, struct t_philo *p)
 {
 	long long	time;
-
+	
 	time = get_time(p->host);
-	while (get_time(p->host) < (time + timer) && !check_state(p->host))
+	if (p->host->is_over)
 	{
-		usleep(50);
+		take_locks(p);
+		return ;
 	}
-	return ;
+	while (get_time(p->host) < (time + timer))
+	{	
+		if (p->host->is_over)
+		{
+			take_locks(p);
+			return ;
+		}
+		else
+			test(p, 10);
+	}
 }
 
 void	sync_start(long long timer, struct t_host *host)
@@ -49,15 +68,26 @@ void	write_status(struct t_philo *p, char *str)
 	p->wl = true;
 	time = get_time(p->host);
 	if (p->host->is_over)
+	{
+		take_locks(p);
 		return ;
+	}
 	printf("%lld %ld %s\n", time, p->id, str);
 	handle_unlock(&p->host->t_lock, p->host);
-	p->fl = false;
+	p->wl = false;
 }
 
 void	end_sim(struct t_host *h)
 {
-	handle_mutex_removal(h);
-	handle_free(h);
+	long	i;
+	
+	i = 0;
+	while (i < h->n)
+	{
+		pthread_mutex_destroy(&h->forks[i]);
+		i++;
+	}
+	pthread_mutex_destroy(&h->t_lock);
+	free(h->philos);
 	exit(0);
 }

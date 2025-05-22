@@ -12,35 +12,32 @@
 
 #include "philo.h"
 
-void	take_locks(t_philo *p)
-{
-	if(p->lf)
-		handle_unlock(&p->host->forks[p->l_fork], p->host);
-	if (p->rf)
-		handle_unlock(&p->host->forks[p->r_fork], p->host);
-	if (p->wl)
-		handle_unlock(&p->host->t_lock);
-}
-
 static void	eat(t_philo *p)
 {
 	if (p->host->is_over || p->eat_counter == p->host->n_of_eats)
 		return;
-	handle_lock(&p->host->forks[p->l_fork], p->host);
-	p->lf = true;
-	handle_lock(&p->host->forks[p->r_fork], p->host);
-	p->rf = true;
+	if (handle_flock(&p->host->forks[p->l_fork], p, 1))
+		return ;
+	if (handle_flock(&p->host->forks[p->r_fork], p, 2))
+		return ;
+	if (p->host->is_over)
+	{
+		take_locks(p);
+		return ;
+	}
 	write_status(p, "has taken a fork");
+	if (p->host->is_over)
+		return ;
 	write_status(p, "is eating");
 	p->last_eat = get_time(p->host);
 	waiter(p->host->time_to_eat, p);
 	p->eat_counter++;
-	handle_unlock(&p->host->forks[p->l_fork], p->host);
-	p->lf = false;
-	handle_unlock(&p->host->forks[p->r_fork], p->host);
-	p->rf = false;
+	take_locks(p);
 	if (p->host->is_over || p->eat_counter == p->host->n_of_eats)
+	{
+		take_locks(p);
 		return;
+	}
 	write_status(p, "is sleeping");
 	waiter(p->host->time_to_sleep, p);
 }

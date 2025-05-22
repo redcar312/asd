@@ -40,18 +40,37 @@ void	start_sim(struct t_host *host)
 	i = -1;
 	delay = (long long)host->n * 2 * 10;
 	host->start_time = get_time(host) + delay;
+	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) != 0)
+		handle_err(host, "thread creation error");
+	pthread_join(host->monitor, NULL);
 	while (++i < host->n)
 	{
 		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) != 0)
-			write(1, "e", 1);
+				
 		host->t_count.p_count++;
 	}
-	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) != 0)
-		handle_err(host, "thread creation error");
-	host->monitor = true;
-
+	i = -1;
+	while (++i < 0)
+	{
+		pthread_join(host->philos[i].thread, NULL);
+		i--;
+	}
+	pthread_exit(NULL);
 }
-
+void end(t_host *h)
+{
+	long	n;
+	
+	n = 0;
+	pthread_mutex_destroy(&h->t_lock);
+	while (n < h->n)
+	{
+		pthread_mutex_destroy(&h->forks[n]);
+		n++;
+	}
+	free(h->philos);
+	free(h->forks);
+}
 int	main(int argc, char **argv)
 {
 	struct t_host	host;
@@ -68,6 +87,7 @@ int	main(int argc, char **argv)
 		exit(1);
 	}
 	host.n = ft_atol(argv[1]);
+	host.is_over = false;
 	init_host_data(&host, argv);
 	start_sim(&host);
 	while(1)
@@ -75,6 +95,6 @@ int	main(int argc, char **argv)
 		if(host.is_over)
 			break;
 	}
-	end_sim(&host);
-	exit(0);
+	end(&host);
+	return(0);
 }

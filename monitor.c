@@ -12,23 +12,6 @@
 
 #include "philo.h"
 
-bool	check_state(struct t_host *h)
-{
-	bool	state;
-
-	handle_lock(&h->status_lock, h);
-	state = h->is_over;
-	handle_unlock(&h->status_lock, h);
-	return (state);
-}
-
-void	set_status(struct t_host *h, bool status)
-{
-	handle_lock(&h->status_lock, h);
-	h->is_over = status;
-	handle_unlock(&h->status_lock, h);
-}
-
 bool	has_died(struct t_philo *p)
 {
 	long long	time;
@@ -80,7 +63,7 @@ void	*monitor(void *arg)
 	sync_start(host->start_time, host);
 	while (1)
 	{
-		if (is_done(host))
+		if (is_done(host) || host->is_over)
 			return(NULL);
 	}
 	return (NULL);

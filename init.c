@@ -17,15 +17,26 @@ void	init_forks(struct t_host *host, long n)
 	long	i;
 
 	i = -1;
-	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
-		handle_err(host, "fork init error");
 	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
-		handle_err(host, "fork init error");
+	{
+		pthread_mutex_destroy(&host->t_lock);
+		free(host->philos);
+		print_error("fork creation error");
+		exit(1);
+	}
 	while (++i < n)
 	{
 		if (pthread_mutex_init(&host->forks[i], NULL) != 0)
-			handle_err(host, "fork init error");
-		host->tc++;
+		{
+			while (i > 0)
+			{
+				pthread_mutex_destroy(&host->forks[i]);
+				i--;
+			}
+			free(host->philos);
+			print_error("fork creation error");
+			exit(1);
+		}
 	}
 }
 
@@ -63,10 +74,7 @@ void	init_p_data(struct t_host *host, long n)
 		host->philos[i].eat_counter = 0;
 		host->philos[i].rf = false;
 		host->philos[i].lf = false;	
-		host->philos[i].wl = false;	
-		if (pthread_mutex_init(&host->philos[i].lock, NULL) != 0)
-			handle_err(host, "mutex init error");
-		host->tl++;
+		host->philos[i].wl = false;
 		give_forks(&host->philos[i], i);
 	}
 }
@@ -100,11 +108,12 @@ int	init_host_data(struct t_host *host, char **argv)
 		return (-1);
 	host->forks = malloc(l * sizeof(pthread_mutex_t));
 	if (!host->forks)
-		handle_err(host, "malloc fail");
+	{
+		free(host->philos);
+		return (-1);
+	}
 	init_forks(host, l);
 	init_p_data(host, l);
-	if (pthread_mutex_init(&host->status_lock, NULL) != 0)
-		handle_err(host, "mutex init error");
 	host->sc = 1;
 	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
 		handle_err(host, "mutex init error");

@@ -44,7 +44,6 @@ typedef struct t_host
 	long				n_of_eats;
 	long				n;
 	pthread_t			monitor;
-	pthread_mutex_t		status_lock;
 	pthread_mutex_t		t_lock;
 	_Atomic bool				is_over;
 }	t_host;
@@ -68,6 +67,7 @@ long long	ft_atoll(const char *num);
 int			ft_atol(const char *str);
 int			ft_atoi(const char *str);
 int			f_isdigit(unsigned int c);
+int			handle_flock(pthread_mutex_t *ptr, t_philo *p, int n);
 bool		validator(char **argv);
 void		init_p_data(struct t_host *host, long n);
 int			init_host_data(struct t_host *host, char **argv);
@@ -91,4 +91,5 @@ void		handle_mutex_removal(struct t_host *h);
 void		handle_free(struct t_host *h);
 void		handle_thread_removal(struct t_host *host);
 void		end_sim(struct t_host *h);
+void		take_locks(t_philo *p);
 #endif

@@ -10,13 +10,13 @@
 #                                                                              #
 # **************************************************************************** #
 
-SRCS	= main.c atoi.c err_handler.c init.c monitor.c philo.c sim_utils.c validator.c
+SRCS	= main.c atoi.c err_handler.c init.c monitor.c philo.c sim_utils.c validator.c handle_forks.c
 
 HEAD	= ./
 
 OBJS	= ${SRCS:.c=.o}
 
-NAME	= philosopher
+NAME	= philo
 
 RM	= rm -f
 
