@@ -27,62 +27,56 @@ void	handle_unlock(pthread_mutex_t *ptr, struct t_host *h)
 static void	handle_single(struct t_host *host)
 {
 	if (pthread_create(&host->philos[0].thread, NULL,
-			*single_philo, (void *)&host->philos[0]))
-		handle_err(host, "thread creation error");
+			*single_philo, (void *)&host->philos[0]) != 0)
+	{
+		exit(1);
+	}	
 	host->t_count.p_count++;
+}
+
+void	delete_all(t_host *host, long count, bool m)
+{
+	long	i;
+
+	i = -1;
+	if (m)
+		pthread_join(host->monitor, NULL);
+	while (++i < count)
+		pthread_join(host->philos[i].thread, NULL);
+	free(host->philos);
+	free(host->forks);
+	exit(1);
+		
 }
 
 void	start_sim(struct t_host *host)
 {
 	long		i;
 	long long	delay;
-	pthread_t	s_monitor;
 
 	i = -1;
 	delay = (long long)host->n * 2 * 10;
 	host->start_time = get_time(host) + delay;
-	if (pthread_create(&s_monitor, NULL, *monitor, (void *)host) != 0)
-		handle_err(host, "thread creation error");
 	while (++i < host->n)
 	{
 		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) != 0)
-				
+		{
+			print_error("thread creation error");
+			delete_all(host, i, false);
+		}	
 		host->t_count.p_count++;
 	}
-	pthread_join(&s_monitor, NULL);
-	i = -1;
-	while (++i < 0)
+	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) != 0)
 	{
-		pthread_detach(host->philos[i].thread, NULL);
-		i--;
+		print_error("thread creation error");
+		delete_all(host, i, true);
 	}
-	pthread_exit(NULL);
-}
-
-
-void end(t_host *h)
-{
-	long	n;
-	
-	n = 0;
-	pthread_mutex_destroy(&h->t_lock);
-	while (n < h->n)
-	{
-		pthread_mutex_destroy(&h->forks[n]);
-		n++;
-	}
-	free(h->philos);
-	free(h->forks);
-}
-
-void	delete_all(t_host *h, long n)
-{
-	long	i;
-
 	i = -1;
-	pthread_mutex_destroy(h->t_lock);
-	while(++i < n)
-		pthread_mutex_destroy(h->forks[i]);
+	pthread_join(host->monitor, NULL);
+	while (++i < host->n)
+		pthread_join(host->philos[i].thread, NULL);
+	free(host->philos);
+	free(host->forks);
 }
 
 int	main(int argc, char **argv)
@@ -104,11 +98,10 @@ int	main(int argc, char **argv)
 	host.is_over = false;
 	init_host_data(&host, argv);
 	start_sim(&host);
-	while(1)
+	while (1)
 	{
-		if(host.is_over)
+		if (host.is_over)
 			break;
 	}
-	end(&host);
 	return(0);
 }

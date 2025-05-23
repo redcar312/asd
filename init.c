@@ -115,8 +115,6 @@ int	init_host_data(struct t_host *host, char **argv)
 	init_forks(host, l);
 	init_p_data(host, l);
 	host->sc = 1;
-	if (pthread_mutex_init(&host->t_lock, NULL) != 0)
-		handle_err(host, "mutex init error");
 	host->tc = 1;
 	return (1);
 }

@@ -14,34 +14,14 @@
 
 void	handle_err(struct t_host *h, char *msg)
 {	
-	long	n;
-	
-	n = 0;
-	pthread_mutex_destroy(&h->t_lock);
-	while (n < h->n)
-	{
-		take_locks(&h->philos[n]);
-		pthread_mutex_destroy(&h->forks[n]);
-		n++;
-	}
-	free(h->philos);
-	print_error(msg);
-	exit(1);
-}
-
-void	handle_free(struct t_host *h)
-{
 	long	i;
-
-	i = 0;
-	if (!h)
-		return ;
-	while (i < h->tl)
-	{
-		pthread_mutex_destroy(&h->philos[i].lock);
-		i++;
-	}
+	
+	i = -1;
+	print_error(msg);
+	h->is_over = true;
 	free(h->philos);
+	free(h->forks);
+	exit(1);
 }
 
 void	print_error(char *msg)
@@ -57,19 +37,4 @@ void	print_error(char *msg)
 		i++;
 	}
 	write(2, "\n", 1);
-}
-
-void	handle_thread_removal(struct t_host *host)
-{
-	long	i;
-
-	i = 0;
-	while (i < host->t_count.p_count)
-	{
-		pthread_join(host->philos[i].thread, NULL);
-		i++;
-	}
-	if (host->t_count.monitor)
-		pthread_join(host->monitor, NULL);
-	pthread_exit(NULL);
 }

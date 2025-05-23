@@ -44,6 +44,7 @@ typedef struct t_host
 	long				n_of_eats;
 	long				n;
 	pthread_mutex_t		t_lock;
+	pthread_t		monitor;
 	_Atomic bool				is_over;
 }	t_host;
 
@@ -86,9 +87,5 @@ void		handle_lock(pthread_mutex_t *ptr, struct t_host *h);
 void		handle_unlock(pthread_mutex_t *ptr, struct t_host *h);
 void		print_error(char *msg);
 void		*single_philo(void *arg);
-void		handle_mutex_removal(struct t_host *h);
-void		handle_free(struct t_host *h);
-void		handle_thread_removal(struct t_host *host);
-void		end_sim(struct t_host *h);
 void		take_locks(t_philo *p);
 #endif

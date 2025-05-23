@@ -16,9 +16,8 @@ long long	get_time(struct t_host *h)
 {
 	struct timeval	t;
 	long long		res;
-
 	if (gettimeofday(&t, NULL) == -1)
-		handle_err(h, "gettime error");
+		handle_err(h, "time err");
 	res = (long long)(t.tv_sec * 1000) + (long long)(t.tv_usec / 1000);
 	return (res);
 }
@@ -63,7 +62,6 @@ void	sync_start(long long timer, struct t_host *host)
 void	write_status(struct t_philo *p, char *str)
 {
 	long long	time;
-
 	handle_lock(&p->host->t_lock, p->host);
 	p->wl = true;
 	time = get_time(p->host);
@@ -75,19 +73,4 @@ void	write_status(struct t_philo *p, char *str)
 	printf("%lld %ld %s\n", time, p->id, str);
 	handle_unlock(&p->host->t_lock, p->host);
 	p->wl = false;
-}
-
-void	end_sim(struct t_host *h)
-{
-	long	i;
-	
-	i = 0;
-	while (i < h->n)
-	{
-		pthread_mutex_destroy(&h->forks[i]);
-		i++;
-	}
-	pthread_mutex_destroy(&h->t_lock);
-	free(h->philos);
-	exit(0);
 }

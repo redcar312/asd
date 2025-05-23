@@ -22,7 +22,6 @@ bool	has_died(struct t_philo *p)
 	if ((time - p->last_eat) >= p->host->time_to_die)
 	{
 		res = true;
-		write_status(p, "has died");
 	}
 	return (res);
 }
@@ -38,8 +37,12 @@ bool	is_done(struct t_host *h)
 	{
 		if (has_died(&h->philos[i]))
 		{
-			h->is_over = true;
-			return (true);
+			if (h->philos[i].eat_counter != h->n_of_eats)
+			{
+				write_status(&h->philos[i], "has died");
+				h->is_over = true;
+				return (true);
+			}
 		}
 		if (h->n_of_eats != -1)
 		{

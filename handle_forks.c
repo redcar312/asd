@@ -22,7 +22,10 @@ int	handle_flock(pthread_mutex_t *ptr, t_philo *p, int n)
 		return (1);
 	}		
 	if (pthread_mutex_lock(ptr) != 0)
-		handle_err(p->host, "Mutex lock error");
+	{
+		handle_err(p->host, "lock error");
+		return (1);
+	}
 	if (n == 1)
 		p->lf = true;
 	else
@@ -48,4 +51,5 @@ void	take_locks(t_philo *p)
 		handle_unlock(&p->host->t_lock, p->host);
 		p->wl = false;
 	}
+	
 }
