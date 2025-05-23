@@ -36,27 +36,30 @@ void	start_sim(struct t_host *host)
 {
 	long		i;
 	long long	delay;
+	pthread_t	s_monitor;
 
 	i = -1;
 	delay = (long long)host->n * 2 * 10;
 	host->start_time = get_time(host) + delay;
-	if (pthread_create(&host->monitor, NULL, *monitor, (void *)host) != 0)
+	if (pthread_create(&s_monitor, NULL, *monitor, (void *)host) != 0)
 		handle_err(host, "thread creation error");
-	pthread_join(host->monitor, NULL);
 	while (++i < host->n)
 	{
 		if (pthread_create(&host->philos[i].thread, NULL, *philo_loop, (void *)&host->philos[i]) != 0)
 				
 		host->t_count.p_count++;
 	}
+	pthread_join(&s_monitor, NULL);
 	i = -1;
 	while (++i < 0)
 	{
-		pthread_join(host->philos[i].thread, NULL);
+		pthread_detach(host->philos[i].thread, NULL);
 		i--;
 	}
 	pthread_exit(NULL);
 }
+
+
 void end(t_host *h)
 {
 	long	n;

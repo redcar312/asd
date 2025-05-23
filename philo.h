@@ -43,7 +43,6 @@ typedef struct t_host
 	long long			time_to_eat;
 	long				n_of_eats;
 	long				n;
-	pthread_t			monitor;
 	pthread_mutex_t		t_lock;
 	_Atomic bool				is_over;
 }	t_host;
