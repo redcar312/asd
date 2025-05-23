@@ -74,6 +74,17 @@ void end(t_host *h)
 	free(h->philos);
 	free(h->forks);
 }
+
+void	delete_all(t_host *h, long n)
+{
+	long	i;
+
+	i = -1;
+	pthread_mutex_destroy(h->t_lock);
+	while(++i < n)
+		pthread_mutex_destroy(h->forks[i]);
+}
+
 int	main(int argc, char **argv)
 {
 	struct t_host	host;
